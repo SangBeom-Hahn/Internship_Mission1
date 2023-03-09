@@ -4,4 +4,4 @@ _base_ = [
     '../_base_/schedules/schedule_1x_nia31.py', '../_base_/default_runtime.py'
 ]
 
-load_from = 'checkpoints/latest.pth'
+# load_from = 'checkpoints/latest.pth'

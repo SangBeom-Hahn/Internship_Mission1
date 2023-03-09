@@ -9,8 +9,15 @@
             "type": "python",
             "request": "launch",
             "program": "${file}",
+            "args": [
+                "configs/NIA31/mask_rcnn_r50_fpn_1x_coco_na31.py", 
+                "checkpoints/NIA_3-1.pth",
+                "--eval", "segm",
+                "--show-dir", "results/mask_rcnn_r50_fpn_1x_coco_na31_hsb2"
+                ],
             "console": "integratedTerminal",
             "justMyCode": true
+            
         }
     ]
 }

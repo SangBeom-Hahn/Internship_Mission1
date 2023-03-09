@@ -485,6 +485,7 @@ class CocoDataset(CustomDataset):
             cocoEval.params.imgIds = self.img_ids
             cocoEval.params.maxDets = list(proposal_nums)
             cocoEval.params.iouThrs = iou_thrs
+            
             # mapping of cocoEval.stats
             coco_metric_names = {
                 'mAP': 0,
