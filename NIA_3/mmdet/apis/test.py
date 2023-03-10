@@ -4,7 +4,8 @@ import pickle
 import shutil
 import tempfile
 import time
-
+import pandas as pd
+import numpy as np
 import mmcv
 import torch
 import torch.distributed as dist
@@ -21,6 +22,9 @@ def single_gpu_test(model,
                     show_score_thr=0.3):
     model.eval()
     results = []
+    classes = ['blouse', 'cardigan', 'coat', 'jacket', 'jumper', 'shirt', 'sweater', 't-shirt', 'vest', 'pants', 'skirt', 'onepiece(dress)', 'onepiece(jumpsuite)']
+    total_score = []
+    total_labels = []
     dataset = data_loader.dataset
     PALETTE = getattr(dataset, 'PALETTE', None)
     prog_bar = mmcv.ProgressBar(len(dataset))
@@ -60,6 +64,41 @@ def single_gpu_test(model,
                     out_file=out_file,
                     score_thr=show_score_thr)
 
+        if isinstance(result[0], tuple):
+            bbox_result, segm_result = result[0]
+            if isinstance(segm_result, tuple):
+                segm_result = segm_result[0]  # ms rcnn
+        else:
+            bbox_result, segm_result = result, None
+        bboxes = np.vstack(bbox_result)
+        labels = [
+                np.full(bbox.shape[0], i, dtype=np.int32)
+                for i, bbox in enumerate(bbox_result)
+        ]
+        labels = np.concatenate(labels)
+        # draw segmentation masks
+        segms = None
+        if segm_result is not None and len(labels) > 0:  # non empty
+            segms = mmcv.concat_list(segm_result)
+            if isinstance(segms[0], torch.Tensor):
+                segms = torch.stack(segms, dim=0).detach().cpu().numpy()
+            else:
+                segms = np.stack(segms, axis=0)
+        
+        scores = bboxes[:, -1]
+        print(scores, labels)
+        
+        sort_label_and_scores = []
+        for i in range(len(labels)):
+            sort_label_and_scores.append([scores[i], classes[labels[i]]])
+        
+        sort_label_and_scores = sorted(sort_label_and_scores, key = lambda x : -x[0])
+        
+    
+        for i in range(len(sort_label_and_scores)):
+            total_labels.append(sort_label_and_scores[i][1])
+            total_score.append(sort_label_and_scores[i][0])
+        
         # encode mask results
         if isinstance(result[0], tuple):
             result = [(bbox_results, encode_mask_results(mask_results))
@@ -75,6 +114,13 @@ def single_gpu_test(model,
 
         for _ in range(batch_size):
             prog_bar.update()
+            
+    print(total_labels)
+    print(total_score)
+    
+    df = pd.DataFrame({'class': total_labels, 'score': total_score})
+    df.to_csv("result.csv")
+    
     return results
 
 
