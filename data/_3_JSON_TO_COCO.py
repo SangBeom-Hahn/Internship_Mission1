@@ -234,9 +234,6 @@ for filePath in pbar:
     # category = filePath.split('/')[2]
     # detail = filePath.split('/')[4]
 
-    print(jsonFileName)
-    print()
-
     prefix = './원천데이터'
 
     # imagePath = prefix + category + '/' + detail + '/' + imageFileName + '.jpg'
