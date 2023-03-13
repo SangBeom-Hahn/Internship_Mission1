@@ -22,9 +22,12 @@ def single_gpu_test(model,
                     show_score_thr=0.3):
     model.eval()
     results = []
+    # 여기부터
     classes = ['blouse', 'cardigan', 'coat', 'jacket', 'jumper', 'shirt', 'sweater', 't-shirt', 'vest', 'pants', 'skirt', 'onepiece(dress)', 'onepiece(jumpsuite)']
-    total_score = []
-    total_labels = []
+    csv_data=[]
+    column_data = classes
+    column_data.insert(0,'filename')
+    # 여기까지 추가한 배열변수 입니다. , classes의 경우에는 task에 맞게 바꿔야 합니다.
     dataset = data_loader.dataset
     PALETTE = getattr(dataset, 'PALETTE', None)
     prog_bar = mmcv.ProgressBar(len(dataset))
@@ -63,7 +66,10 @@ def single_gpu_test(model,
                     show=show,
                     out_file=out_file,
                     score_thr=show_score_thr)
-
+        
+        
+        
+        # 여기부터 csv 생성관련 코드입니다.
         if isinstance(result[0], tuple):
             bbox_result, segm_result = result[0]
             if isinstance(segm_result, tuple):
@@ -86,19 +92,26 @@ def single_gpu_test(model,
                 segms = np.stack(segms, axis=0)
         
         scores = bboxes[:, -1]
-        print(scores, labels)
         
         sort_label_and_scores = []
-        for i in range(len(labels)):
+        for i in range(1, len(labels)):
             sort_label_and_scores.append([scores[i], classes[labels[i]]])
         
         sort_label_and_scores = sorted(sort_label_and_scores, key = lambda x : -x[0])
         
-    
+        rank = {}
         for i in range(len(sort_label_and_scores)):
-            total_labels.append(sort_label_and_scores[i][1])
-            total_score.append(sort_label_and_scores[i][0])
+            rank[sort_label_and_scores[i][1]] = sort_label_and_scores[i][0]
+            
+        col_data = {}
+        col_data.update({'filename':img_meta['ori_filename']})
+        col_data.update(rank)
         
+        csv_data.append(col_data)
+        # 여기까지가 추가한 코드 입니다.
+        
+        
+        # 원본 코드
         # encode mask results
         if isinstance(result[0], tuple):
             result = [(bbox_results, encode_mask_results(mask_results))
@@ -114,12 +127,10 @@ def single_gpu_test(model,
 
         for _ in range(batch_size):
             prog_bar.update()
-            
-    print(total_labels)
-    print(total_score)
-    
-    df = pd.DataFrame({'class': total_labels, 'score': total_score})
+    #csv생성 관련 코드입니다.
+    df = pd.DataFrame(csv_data,columns=column_data)
     df.to_csv("result.csv")
+    #csv생성 관련 코드입니다.
     
     return results
 
