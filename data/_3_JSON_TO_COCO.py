@@ -78,7 +78,7 @@ def covertCOCO(filePath):
         seg_list = list()
         seg_list.append(annotation['annotation_point'])
         
-        ANNOTATION_INFO['segmentation'] = seg_list
+        ANNOTATION_INFO['segmentation'] = [seg_list]
         ANNOTATION_INFO['area'] = width * height
         ANNOTATION_INFO['iscrowd'] = 0
         ANNOTATION_INFO['image_id'] = int(image_id)
